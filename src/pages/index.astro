@@ -56,6 +56,10 @@ import { EditorView } from "@codemirror/view";
     let startState = EditorState.create({
       doc: `import io;
 
+fn echo(a: int): int {
+  return a;
+}
+
 fn main() {
   io.log("Hello, World!");
 }`,
@@ -68,36 +72,29 @@ fn main() {
 
     function runCode() {
       const code = editor.state.doc.toString();
-      console.log(code);
       const output = document.querySelector("#output")!;
       const URL = "https://gom-compiler.mohitkarekar.com/api/compile";
-      fetch(URL, {
+      const myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      const raw = JSON.stringify({
+        src: code,
+      });
+
+      const requestOptions = {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({ src: code }),
-      })
-        .then((response) => {
-          if (!response.body) return;
-          const reader = response.body.getReader();
-          // @ts-ignore
-          reader.read().then(function pump({ done, value }) {
-            if (done) {
-              // Do something with last chunk of data then exit reader
-              output.textContent += "→ Done";
-              return;
-            }
-            // Otherwise do something here to process current chunk
-            output.textContent += value.toString();
-            // Read some more, and call this function again
-            return reader.read().then(pump);
-          });
+        headers: myHeaders,
+        body: raw,
+      };
+      output.textContent = "Running...";
+      fetch(URL, requestOptions)
+        .then((response) => response.text())
+        .then((result) => {
+          output.textContent = result;
         })
-        .catch((err) => {
-          console.error(err);
-          output.textContent = "→ Error: " + err;
+        .catch((error) => {
+          console.log("error", error);
+          output.textContent = "Error: " + error;
         });
     }
     document.querySelector("#run")!.addEventListener("click", runCode);
