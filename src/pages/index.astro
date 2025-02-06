@@ -1,0 +1,63 @@
+---
+import BaseLayout from "./../layouts/Base.astro";
+import { Code } from "astro:components";
+
+const onChange = (code: string) => {
+  console.log(code);
+};
+---
+
+<BaseLayout>
+  <div class="max-w-3xl mx-auto p-12">
+    <h1 class="text-5xl font-bold mb-4">
+      The <span class="gom-name"><em>Gom</em></span> Programming Language
+    </h1>
+    <p class="source-serif-4-regular">
+      Gom is a statically typed, compiled programming language based on a
+      mixture of TypeScript and Rust syntax. The Gom compiler uses LLVM and the
+      frontend generates LLVM IR. It takes inspiration from AssemblyScript and
+      makes it more approachable to learn
+      <em
+        ><a
+          class="underline gom-name"
+          href="https://compiler-in-typescript.mohitkarekar.com/welcome/start/"
+          target="_blank">compiler construction</a
+        ></em
+      >.
+    </p>
+    <p class="mt-4">
+      A <em>hello world program</em> in Gom looks like following (you'll soon be
+      able to run it):
+    </p>
+    <div class="mt-4" id="editor"></div>
+  </div>
+  <script>
+    import { javascript } from "@codemirror/lang-javascript";
+    import { EditorState, type Extension } from "@codemirror/state";
+    import { basicSetup } from "codemirror";
+    import { EditorView, keymap } from "@codemirror/view";
+    import { ayuLight } from "thememirror";
+    import { indentWithTab } from "@codemirror/commands";
+
+    // codemirror editor
+    const extensions: Extension[] = [
+      basicSetup,
+      keymap.of([indentWithTab]),
+      ayuLight,
+      javascript(),
+    ];
+    let startState = EditorState.create({
+      doc: `import io;
+
+fn main() {
+  io.log("Hello, World!");
+}`,
+      extensions,
+    });
+    const editor = new EditorView({
+      state: startState,
+      parent: document.querySelector("#editor")!,
+    });
+    // editor.state.doc.toString()
+  </script>
+</BaseLayout>
