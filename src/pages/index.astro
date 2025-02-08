@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "./../layouts/Base.astro";
-import { EditorView } from "@codemirror/view";
+import { Content as LanguageDocs } from "./../content/language.md";
 ---
 
 <BaseLayout>
@@ -22,8 +22,17 @@ import { EditorView } from "@codemirror/view";
       >.
     </p>
     <p class="mt-4">
-      A <em>hello world program</em> in Gom looks like following (you'll soon be
-      able to run it):
+      A <em
+        ><select
+          name="program"
+          id="program"
+          class="border-2 border-[#0a7256] rounded"
+        >
+          <option value="hello-world">hello world program</option>
+          <option value="loop">program with loops</option>
+          <option value="recursion">recursive function</option>
+        </select></em
+      > in Gom looks like following, go ahead, run it (you can also edit the code):
     </p>
     <div class="mt-4 relative" id="editor">
       <button
@@ -37,6 +46,11 @@ import { EditorView } from "@codemirror/view";
     <div class="mt-4 p-4 bg-gray-100 text-gray-800">
       <pre id="output" class="text-sm">→ Logs will appear here</pre>
     </div>
+
+    <h2 class="text-3xl font-bold mt-8">
+      Language <em style="color:#0a7256">Features</em>
+    </h2>
+    <LanguageDocs />
   </div>
   <script>
     import { javascript } from "@codemirror/lang-javascript";
@@ -46,6 +60,34 @@ import { EditorView } from "@codemirror/view";
     import { ayuLight } from "thememirror";
     import { indentWithTab } from "@codemirror/commands";
 
+    const PROGRAMS = {
+      "hello-world": `import io;
+
+fn main() {
+  io.log("Hello, World!");
+}`,
+      loop: `import io;
+
+fn main() {
+    let i = 0;
+    for (i = 0; i < 10; i = i + 1) {
+        io.log("i: ", i);
+    }
+}`,
+      recursion: `import io;
+
+fn power_n(x: int, n: int): int {
+    if (n == 0) {
+        return 1;
+    }
+    return x * power_n(x, n - 1);
+}
+
+fn main() {
+    io.log("Hello, World!");
+    io.log("2^3 = ", power_n(2, 3));
+}`,
+    };
     // codemirror editor
     const extensions: Extension[] = [
       basicSetup,
@@ -54,15 +96,7 @@ import { EditorView } from "@codemirror/view";
       javascript(),
     ];
     let startState = EditorState.create({
-      doc: `import io;
-
-fn echo(a: int): int {
-  return a;
-}
-
-fn main() {
-  io.log("Hello, World!");
-}`,
+      doc: PROGRAMS["hello-world"],
       extensions,
     });
     const editor = new EditorView({
@@ -70,9 +104,24 @@ fn main() {
       parent: document.querySelector("#editor")!,
     });
 
+    const program = document.querySelector("#program") as HTMLSelectElement;
+    const output = document.querySelector("#output")!;
+    program.addEventListener("change", onProgramChange);
+
+    function onProgramChange() {
+      const selectedProgram = program.value;
+      editor.dispatch({
+        changes: {
+          from: 0,
+          to: editor.state.doc.length,
+          insert: PROGRAMS[selectedProgram as keyof typeof PROGRAMS],
+        },
+      });
+      output.textContent = "→ Logs will appear here";
+    }
+
     function runCode() {
       const code = editor.state.doc.toString();
-      const output = document.querySelector("#output")!;
       const URL = "https://gom-compiler.mohitkarekar.com/api/compile";
       const myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
@@ -88,9 +137,15 @@ fn main() {
       };
       output.textContent = "Running...";
       fetch(URL, requestOptions)
+        .then((response) => {
+          output.textContent = `# Compiled in ${response.headers.get(
+            "X-Compile-Time"
+          )}ms\n\n`;
+          return response;
+        })
         .then((response) => response.text())
         .then((result) => {
-          output.textContent = result;
+          output.textContent += result;
         })
         .catch((error) => {
           console.log("error", error);
